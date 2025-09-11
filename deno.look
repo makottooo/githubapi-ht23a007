@@ -1,0 +1,24 @@
+{
+  "version": "5",
+  "redirects": {
+    "https://esm.sh/nanoid": "https://esm.sh/nanoid@5.1.5"
+  },
+  "remote": {
+    "https://esm.sh/nanoid@5.1.5": "33ad5b17f1290cb850164cfcf30f642d9dad489ba19909bc3cfd9eb78369f451",
+    "https://esm.sh/nanoid@5.1.5/denonext/nanoid.mjs": "dc919f2d7339a244f732a0cf02e3962dd1289535668026f52fb26bd593e9358b"
+  },
+  "workspace": {
+    "packageJson": {
+      "dependencies": [
+        "npm:@types/react-dom@^18.0.6",
+        "npm:@types/react@^18.0.17",
+        "npm:@vitejs/plugin-react@^2.2.0",
+        "npm:react-dom@^18.2.0",
+        "npm:react@^18.2.0",
+        "npm:typescript@^4.6.4",
+        "npm:vite-tsconfig-paths@^5.1.4",
+        "npm:vite@^6.3.5"
+      ]
+    }
+  }
+}
