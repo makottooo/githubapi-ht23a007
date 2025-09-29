@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import TokenSection from './components/Token';
 import RepoSection from './components/Repo';
 import DropSection from './components/Drop';
+import CommitSection from './components/Commit';
+import BranchSection from './components/Branch';
 
 // 共有: GitHub API ベースURL
 const BASE = 'https://api.github.com';
@@ -13,6 +15,8 @@ export default function App() {
   const [repos, setRepos] = useState<any[]>([]);
   const [repo, setRepo] = useState<any>(null);
   const [log, setLog] = useState('');
+  const [commitMsg, setCommitMsg] = useState('');
+  const [branch, setBranch] = useState('');
 
   // token から認証ヘッダを計算
   const authHeaders = useMemo(
@@ -50,12 +54,27 @@ export default function App() {
         BASE={BASE}
       />
 
+      {/* ブランチ選択（新規追加） */}
+      <BranchSection
+        repo={repo}
+        branch={branch}
+        setBranch={setBranch}
+        authHeaders={authHeaders}
+        BASE={BASE}
+        setLog={setLog}
+      />
+
+      {/* 新規: コミットメッセージ入力 */}
+      <CommitSection commitMsg={commitMsg} setCommitMsg={setCommitMsg} />
+
       {/*ドロップでアップロード*/}
       <DropSection
         repo={repo}
         setLog={setLog}
+        branch={branch}
         authHeaders={authHeaders}
         BASE={BASE}
+        commitMsg={commitMsg}
       />
 
       {/*ログ*/}
