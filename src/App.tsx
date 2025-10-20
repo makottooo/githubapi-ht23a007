@@ -27,6 +27,25 @@ export default function App() {
     [token]
   );
 
+  // 認証前はログイン画面のみ（専用画面化）
+  if (!me) {
+    return (
+      <main style={{ maxWidth: 720, margin: '20px auto', padding: 16 }}>
+        <h1>ログイン画面</h1>
+        <TokenSection
+          token={token}
+          setToken={setToken}
+          me={me}
+          setMe={setMe}
+          setLog={setLog}
+          authHeaders={authHeaders}
+          BASE={BASE}
+        />
+        <pre style={{ marginTop: 16, whiteSpace: 'pre-wrap' }}>{log}</pre>
+      </main>
+    );
+  }
+
   return (
     <main style={{ maxWidth: 720, margin: '20px auto', padding: 16 }}>
       <h1>GitHub ドラッグ＆ドロップ アップロード</h1>

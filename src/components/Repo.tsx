@@ -38,7 +38,7 @@ export default function RepoSection({
 
   return (
     <section>
-      <h2>② リポジトリ選択</h2>
+      <h2> リポジトリ選択</h2>
       <button onClick={handleRepos}>リポ一覧取得</button>
       <select
         onChange={(e) => setRepo(repos[Number(e.target.value)])}

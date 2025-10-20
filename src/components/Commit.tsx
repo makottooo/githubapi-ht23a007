@@ -9,7 +9,7 @@ export default function CommitSection({ commitMsg, setCommitMsg }: Props) {
   const id = useId();
   return (
     <section>
-      <h2>③ コミットメッセージ</h2>
+      <h2> コミットメッセージ</h2>
       <label htmlFor={id} style={{ display: 'block', marginBottom: 4 }}></label>
       <input
         id={id}

@@ -148,7 +148,7 @@ export default function DropSection({
   // 必ず JSX を返す
   return (
     <section>
-      <h2>③ ドロップでアップロード</h2>
+      <h2>ドロップでアップロード</h2>
 
       <div
         onDragOver={(e) => e.preventDefault()}

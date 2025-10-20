@@ -43,7 +43,7 @@ export default function BranchSection({
 
   return (
     <section>
-      <h2>③ ブランチ選択</h2>
+      <h2>ブランチ選択</h2>
       <select
         disabled={!hasRepo || branches.length === 0}
         value={branch || ''}
