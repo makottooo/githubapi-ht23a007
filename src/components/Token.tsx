@@ -122,24 +122,94 @@ export default function TokenSection({
       {!me && (
         <details style={{ marginTop: 12 }}>
           <summary>トークンの作成手順を見る</summary>
-          <ol style={{ marginTop: 8 }}>
-            <li>
-              GitHubにサインイン → 右上プロフィール → <em>Settings</em>
-            </li>
-            <li>
-              <em>Developer settings</em> → <em>Personal access tokens</em> →{' '}
-              <em>Fine-grained tokens</em>
-            </li>
-            <li>
-              <em>Generate new token</em>：対象リポジトリ／権限（
-              <code>Contents: Read/Write</code>）を付与
-            </li>
-            <li>生成されたトークンを上の入力欄へ貼り付け（初回のみ）</li>
-          </ol>
-          <p style={{ fontSize: 12, opacity: 0.8 }}>
-            ※
-            共有PCでは保存をOFFにしてください。トークンはリポジトリに絶対コミットしないでください。
-          </p>
+
+          {/* ここから置き換え */}
+          <div style={{ marginTop: 8, lineHeight: 1.7 }}>
+            <h2 style={{ margin: '12px 0' }}>githubトークンの作り方</h2>
+
+            <h3>1. Githubにサインインする</h3>
+            <p>
+              <a href="https://github.co.jp/" target="_blank" rel="noreferrer">
+                https://github.co.jp/
+              </a>
+            </p>
+
+            <h3>2. 右上のプロフィールを押す</h3>
+            <figure style={{ textAlign: 'center', margin: '8px 0' }}>
+              <img
+                src="/images/1.png"
+                alt="プロフィールメニュー"
+                style={{ maxWidth: '100%', height: 'auto' }}
+              />
+              <figcaption></figcaption>
+            </figure>
+
+            <h3>3. Settings（設定）を開く</h3>
+            <figure style={{ textAlign: 'center', margin: '8px 0' }}>
+              <img
+                src="/images/2.png"
+                alt="Settings"
+                style={{ maxWidth: '100%', height: 'auto' }}
+              />
+            </figure>
+
+            <h3>4. Developer settings → Personal access tokens</h3>
+            <figure style={{ textAlign: 'center', margin: '8px 0' }}>
+              <img
+                src="/images/3.png"
+                alt="Developer settings"
+                style={{ maxWidth: '100%', height: 'auto' }}
+              />
+            </figure>
+
+            <h3>5. Fine-grained tokens を選択</h3>
+            <figure style={{ textAlign: 'center', margin: '8px 0' }}>
+              <img
+                src="/images/4.png"
+                alt="Fine-grained tokens"
+                style={{ maxWidth: '100%', height: 'auto' }}
+              />
+            </figure>
+
+            <h3>6. Generate new token を押す</h3>
+            <figure style={{ textAlign: 'center', margin: '8px 0' }}>
+              <img
+                src="/images/5.png"
+                alt="Generate new token"
+                style={{ maxWidth: '100%', height: 'auto' }}
+              />
+            </figure>
+
+            <h3>7. token 設定（Repository access）</h3>
+            <p>
+              Token name / Expiration
+              を設定（用途が伝わる名前に。期限は必要に応じて）
+              →repoのチェックマークを押す →Generate token を押して発行
+            </p>
+            <figure style={{ textAlign: 'center', margin: '8px 0' }}>
+              <img
+                src="/images/6.png"
+                alt="Generate new token"
+                style={{ maxWidth: '100%', height: 'auto' }}
+              />
+            </figure>
+
+            <h3>8. トークンを発行（Generate token）</h3>
+            <p>
+              生成されたトークンは一度しか表示されません。安全な場所に保存してください。
+            </p>
+            <figure style={{ textAlign: 'center', margin: '8px 0' }}>
+              <img
+                src="/images/7.png"
+                alt="Generate new token"
+                style={{ maxWidth: '100%', height: 'auto' }}
+              />
+            </figure>
+            <h3>9. アプリの入力欄に貼り付け（初回のみ）</h3>
+            <p>
+              共有PCでは保存をOFFにしてください。トークンはリポジトリに絶対コミットしないこと。
+            </p>
+          </div>
         </details>
       )}
       {me && (

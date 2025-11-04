@@ -15,7 +15,7 @@ async function fileToBase64(file: File): Promise<string> {
 
 type Props = {
   repo: any; // { owner:{login}, name, default_branch }
-  setLog: (updater: any) => void;
+  setLog: React.Dispatch<React.SetStateAction<string>>;
   branch: string;
   authHeaders: Record<string, string>;
   BASE: string;
@@ -36,6 +36,66 @@ const genId = () =>
   globalThis.crypto && 'randomUUID' in globalThis.crypto
     ? (globalThis.crypto as Crypto).randomUUID()
     : Math.random().toString(36).slice(2) + Date.now().toString(36);
+
+// base ブランチの最新コミットSHAを取得
+async function getBranchHeadSha(
+  BASE: string,
+  owner: string,
+  repo: string,
+  branch: string,
+  headers: Record<string, string>
+): Promise<string> {
+  const url = `${BASE}/repos/${owner}/${repo}/git/ref/heads/${encodeURIComponent(
+    branch
+  )}`;
+  const res = await fetch(url, { headers });
+  const data = await res.json();
+  if (!res.ok) throw data;
+  return data.object?.sha;
+}
+
+// base から新しいブランチを作る
+async function createBranchFrom(
+  BASE: string,
+  owner: string,
+  repo: string,
+  newBranch: string,
+  fromSha: string,
+  headers: Record<string, string>
+) {
+  const url = `${BASE}/repos/${owner}/${repo}/git/refs`;
+  const body = { ref: `refs/heads/${newBranch}`, sha: fromSha };
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  // 既に同名がある場合は 422 が返ることがある → その場合はスキップ扱い
+  if (res.status === 422) return;
+  const data = await res.json();
+  if (!res.ok) throw data;
+}
+
+// PR を作成（targetOwner/targetRepo 宛て）
+async function createPullRequest(
+  BASE: string,
+  targetOwner: string,
+  targetRepo: string,
+  head: string, // 作業ブランチ（フォーク→本家PR時は "forkOwner:branch"）
+  base: string, // 取り込み先ブランチ
+  title: string,
+  headers: Record<string, string>
+): Promise<string> {
+  const url = `${BASE}/repos/${targetOwner}/${targetRepo}/pulls`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, head, base }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw data;
+  return data.html_url as string; // PRのURL
+}
 
 export default function DropSection({
   repo,
@@ -72,10 +132,15 @@ export default function DropSection({
   const clearAll = () => setQueue([]);
 
   // 既存なら sha を返す（404 は新規扱い）
-  const getShaIfExists = async (path: string): Promise<string | null> => {
-    const url = `${BASE}/repos/${repo.owner.login}/${
-      repo.name
-    }/contents/${encodePath(path)}?ref=${encodeURIComponent(branch)}`;
+  const getShaIfExists = async (
+    owner: string,
+    repoName: string,
+    targetBranch: string,
+    path: string
+  ): Promise<string | null> => {
+    const url = `${BASE}/repos/${owner}/${repoName}/contents/${encodePath(
+      path
+    )}?ref=${encodeURIComponent(targetBranch)}`;
     const res = await fetch(url, { headers: authHeaders });
     if (res.status === 404) return null;
     const data = await res.json();
@@ -84,7 +149,7 @@ export default function DropSection({
   };
 
   // まとめてアップロード（各ファイル別コミット）
-  const uploadAll = async () => {
+  const uploadAllAsPR = async () => {
     if (!hasRepo) {
       alert('リポジトリを選んでください');
       return;
@@ -97,6 +162,63 @@ export default function DropSection({
       alert('アップロードするファイルがありません');
       return;
     }
+    const forkOwner = repo.owner.login;
+    const forkName = repo.name;
+    const baseBranchOnFork = branch;
+    // フォーク判定
+    const isFork = Boolean(repo.fork && repo.parent);
+    // === フォークしていない場合：ブランチ作成なし・PRなし・選択中ブランチに直PUTして終了 ===
+    if (!isFork) {
+      setLog(
+        (p) =>
+          p +
+          `\n アップロード開始: ${queue.length}件 → ${forkOwner}/${forkName}@${baseBranchOnFork}（PRなし・新規ブランチなし）`
+      );
+
+      for (const item of queue) {
+        const f = item.file;
+        try {
+          const base64 = await fileToBase64(f);
+          const sha = await getShaIfExists(
+            forkOwner,
+            forkName,
+            baseBranchOnFork,
+            f.name
+          );
+          const putUrl = `${BASE}/repos/${forkOwner}/${forkName}/contents/${encodePath(
+            f.name
+          )}`;
+          const body: any = {
+            message:
+              (commitMsg || '').trim() || `${sha ? 'update' : 'add'} ${f.name}`,
+            content: base64,
+            branch: baseBranchOnFork, // ← 選択中ブランチにそのままPUT
+            ...(sha ? { sha } : {}),
+          };
+          const putRes = await fetch(putUrl, {
+            method: 'PUT',
+            headers: { ...authHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
+          const data = await putRes.json();
+          if (!putRes.ok) throw data;
+
+          setLog(
+            (p) => p + `\n ${f.name} → ${data.content?.html_url ?? '(no url)'}`
+          );
+        } catch (e: any) {
+          setLog(
+            (p) => p + `\n ${f.name} → 失敗: ${e?.message || JSON.stringify(e)}`
+          );
+        }
+      }
+
+      setLog((p) => p + `\n 完了（PRは作成していません）`);
+      setQueue([]);
+      alert('アップロード完了（PRなし）');
+      return; // ← ここで終了（以降の作業ブランチ作成＆PR作成へは進まない）
+    }
+    // ======================================================================
 
     setLog(
       (prev: string) =>
@@ -104,21 +226,61 @@ export default function DropSection({
         `\n アップロード開始: ${queue.length}件 → ${repo.owner.login}/${repo.name}@${branch}`
     );
 
+    // 1) フォーク側の base から作業ブランチを自動作成
+    let headSha: string;
+    try {
+      headSha = await getBranchHeadSha(
+        BASE,
+        forkOwner,
+        forkName,
+        baseBranchOnFork,
+        authHeaders
+      );
+    } catch (e: any) {
+      setLog((p: string) => p + `\n base取得失敗: ${e?.message ?? e}`);
+      return;
+    }
+
+    const workBranch = `upload-${new Date()
+      .toISOString()
+      .replace(/[-:T.Z]/g, '')
+      .slice(0, 14)}`; // 例: upload-20251104 1230
+
+    try {
+      await createBranchFrom(
+        BASE,
+        forkOwner,
+        forkName,
+        workBranch,
+        headSha,
+        authHeaders
+      );
+      setLog((p: string) => p + `\n 作業ブランチ作成: ${workBranch}`);
+    } catch (e: any) {
+      setLog((p: string) => p + `\n 作業ブランチ作成失敗: ${e?.message ?? e}`);
+      return;
+    }
+    // 2) 作業ブランチへアップロード（各ファイル別コミット）
     for (const item of queue) {
       const f = item.file;
       try {
-        // 1) 既存確認（sha取得）
-        const sha = await getShaIfExists(f.name);
-
-        // 2) PUT（新規 or 更新）
         const base64 = await fileToBase64(f);
-        const putUrl = `${BASE}/repos/${repo.owner.login}/${
-          repo.name
-        }/contents/${encodePath(f.name)}`;
+        const putUrl = `${BASE}/repos/${forkOwner}/${forkName}/contents/${encodePath(
+          f.name
+        )}`;
+
+        // 冪等性のため、作業ブランチ側で sha を確認
+        let sha: string | null = null;
+        try {
+          sha = await getShaIfExists(forkOwner, forkName, workBranch, f.name);
+        } catch (_) {}
+
         const body: any = {
-          message: commitMsg.trim() || `${sha ? 'update' : 'add'} ${f.name}`,
+          message:
+            (commitMsg || '').trim() ||
+            `${sha ? 'update' : 'add'} ${f.name} (via ${workBranch})`,
           content: base64,
-          branch,
+          branch: workBranch,
           ...(sha ? { sha } : {}),
         };
 
@@ -130,7 +292,6 @@ export default function DropSection({
         const data = await putRes.json();
         if (!putRes.ok) throw data;
 
-        // 3) ログ表示
         setLog(
           (prev: string) =>
             prev + `\n ${f.name} → ${data.content?.html_url ?? '(no url)'}`
@@ -141,11 +302,39 @@ export default function DropSection({
       }
     }
 
+    // 3) PR 作成
+    //    - フォークリポなら「本家」宛てに head='forkOwner:workBranch', base=parent.default_branch
+    //    - フォークでなければ同一リポPR（head=workBranch, base=UI選択ブランチ）
+    const targetOwner = isFork ? repo.parent.owner.login : forkOwner;
+    const targetRepo = isFork ? repo.parent.name : forkName;
+    const baseBranchForPR = isFork
+      ? repo.parent.default_branch || 'main'
+      : baseBranchOnFork;
+    const headForPR = isFork ? `${forkOwner}:${workBranch}` : workBranch;
+
+    try {
+      const prTitle =
+        (commitMsg || '').trim() ||
+        `Upload ${queue.length} file(s) via ${workBranch}`;
+      const prUrl = await createPullRequest(
+        BASE,
+        targetOwner,
+        targetRepo,
+        headForPR,
+        baseBranchForPR,
+        prTitle,
+        authHeaders
+      );
+      setLog((p: string) => p + `\n PR 作成: ${prUrl}`);
+      alert(`PR を作成しました:\n${prUrl}`);
+    } catch (e: any) {
+      setLog((p: string) => p + `\n PR作成失敗: ${e?.message ?? e}`);
+    }
+
     setLog((prev: string) => prev + `\n 完了`);
-    clearAll(); // 成否に関わらずキューを空に
+    setQueue([]); // 終了後にキューを空に
   };
 
-  // 必ず JSX を返す
   return (
     <section>
       <h2>ドロップでアップロード</h2>
@@ -206,7 +395,7 @@ export default function DropSection({
           </ul>
 
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={uploadAll}>すべてアップロード</button>
+            <button onClick={uploadAllAsPR}>すべてアップロード</button>
             <button onClick={clearAll}>全クリア</button>
           </div>
         </div>
