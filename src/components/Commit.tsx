@@ -3,10 +3,18 @@ import { useId } from 'react';
 type Props = {
   commitMsg: string;
   setCommitMsg: (v: string) => void;
+  prTitle: string; // ★追加
+  setPrTitle: (v: string) => void;
 };
 
-export default function CommitSection({ commitMsg, setCommitMsg }: Props) {
+export default function CommitSection({
+  commitMsg,
+  setCommitMsg,
+  prTitle,
+  setPrTitle,
+}: Props) {
   const id = useId();
+  const prId = useId();
   return (
     <section>
       <h2> コミットメッセージ</h2>
