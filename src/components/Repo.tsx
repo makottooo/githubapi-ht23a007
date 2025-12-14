@@ -4,6 +4,7 @@ type Props = {
   repo: any;
   me: any;
   setRepo: (v: any) => void;
+  setBranch: (v: string) => void;
   setLog: (updater: any) => void;
   authHeaders: Record<string, string>;
   BASE: string;
@@ -15,6 +16,7 @@ export default function RepoSection({
   me,
   repo,
   setRepo,
+  setBranch,
   setLog,
   authHeaders,
   BASE,

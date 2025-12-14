@@ -3,7 +3,7 @@ import { useId } from 'react';
 type Props = {
   commitMsg: string;
   setCommitMsg: (v: string) => void;
-  prTitle: string; // ★追加
+  prTitle: string;
   setPrTitle: (v: string) => void;
 };
 

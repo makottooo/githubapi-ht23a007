@@ -35,13 +35,6 @@ export default function TokenSection({
     }
   }, [setToken]);
 
-  // 2) token が入ったら自動認証
-  useEffect(() => {
-    if (!token) return;
-    void handleAuth();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
-
   const persistToken = (value: string) => {
     localStorage.removeItem(LKEY);
     sessionStorage.removeItem(LKEY);
@@ -115,7 +108,6 @@ export default function TokenSection({
             </button>
           </>
         )}
-        <button onClick={logoutAndClear}>ログアウト</button>
       </div>
 
       {/* トークン作成ガイド（認証前のみ表示） */}

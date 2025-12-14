@@ -22,6 +22,7 @@ type Props = {
   BASE: string;
   commitMsg?: string;
   prTitle?: string;
+  usePr: boolean;
 };
 
 // / を維持しつつ各セグメントだけエンコード（フォルダ対応も安全に）
@@ -112,6 +113,7 @@ export default function DropSection({
   BASE,
   commitMsg = '',
   prTitle = '',
+  usePr,
 }: Props): JSX.Element {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const hasRepo = !!repo;
@@ -242,7 +244,7 @@ export default function DropSection({
 
       // ここから：main 以外なら PR を自動作成
       // ここから：main 以外なら「PR 候補」として Puluriku を出す
-      if (baseBranchOnFork && baseBranchOnFork !== defaultBranch) {
+      if (baseBranchOnFork && baseBranchOnFork !== defaultBranch && usePr) {
         const defaultTitleForPr =
           (prTitle || commitMsg || '').trim() ||
           `Upload ${queue.length} file(s) from ${baseBranchOnFork}`;
@@ -264,9 +266,19 @@ export default function DropSection({
           'アップロードが完了しました。\n必要であれば、下のフォームからプルリクエストを作成してください。'
         );
       } else {
-        // main に直接コミットしただけのパターン
-        setLog((p) => p + `\n アップロード完了（PRは作成していません）`);
-        alert('アップロード完了（PRなし）');
+        // main への直接 or PR機能OFF
+        setLog(
+          (p) =>
+            p +
+            (usePr
+              ? `\n アップロード完了（PRは作成していません）`
+              : `\n アップロード完了（プルリクエスト機能OFFのためPRは作成しません）`)
+        );
+        alert(
+          usePr
+            ? 'アップロード完了（PRなし）'
+            : 'アップロード完了（プルリクエスト機能はOFFです）'
+        );
       }
 
       setQueue([]); // 終了後にキューを空に
@@ -274,7 +286,7 @@ export default function DropSection({
     }
 
     // ==========================
-    // ② フォークしている場合（今まで通り）
+    // ② フォークしている場合
     // ==========================
     setLog(
       (prev: string) =>
@@ -367,21 +379,30 @@ export default function DropSection({
       (prTitle || commitMsg || '').trim() ||
       `Upload ${queue.length} file(s) via ${workBranch}`;
 
-    setPendingPr({
-      owner: parentOwner,
-      repo: parentName,
-      head: `${forkOwner}:${workBranch}`, // head = 自分フォークの作業ブランチ
-      base: baseForPR,
-      defaultTitle: defaultTitleForPr,
-    });
-    setLog(
-      (p) =>
-        p +
-        `\n アップロード完了。必要であれば下のフォームから ${forkOwner}:${workBranch} → ${parentOwner}/${parentName}@${baseForPR} のプルリクエストを作成できます。`
-    );
-    alert(
-      'アップロードが完了しました。\n必要であれば、下のフォームからプルリクエストを作成してください。'
-    );
+    if (usePr) {
+      setPendingPr({
+        owner: parentOwner,
+        repo: parentName,
+        head: `${forkOwner}:${workBranch}`, // head = 自分フォークの作業ブランチ
+        base: baseForPR,
+        defaultTitle: defaultTitleForPr,
+      });
+      setLog(
+        (p) =>
+          p +
+          `\n アップロード完了。必要であれば下のフォームから ${forkOwner}:${workBranch} → ${parentOwner}/${parentName}@${baseForPR} のプルリクエストを作成できます。`
+      );
+      alert(
+        'アップロードが完了しました。\n必要であれば、下のフォームからプルリクエストを作成してください。'
+      );
+    } else {
+      setLog(
+        (p) =>
+          p +
+          `\n アップロード完了（プルリクエスト機能OFFのため、本家へのPRは作成しません）`
+      );
+      alert('アップロード完了（プルリクエスト機能はOFFです）');
+    }
 
     setQueue([]); // 終了後にキューを空に
   };
@@ -493,7 +514,7 @@ export default function DropSection({
       )}
       {/* ★ PUSH 後に PR が作れる状態のときだけ Puluriku を表示 */}
       <Puluriku
-        visible={!!pendingPr}
+        visible={usePr && !!pendingPr}
         defaultTitle={pendingPr?.defaultTitle}
         onSubmit={handleCreatePrFromForm}
       />

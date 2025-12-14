@@ -19,6 +19,7 @@ export default function App() {
   const [commitMsg, setCommitMsg] = useState('');
   const [prTitle, setPrTitle] = useState('');
   const [branch, setBranch] = useState('');
+  const [usePr, setUsePr] = useState<boolean>(true);
 
   // token から認証ヘッダを計算
   const authHeaders = useMemo(
@@ -55,6 +56,89 @@ export default function App() {
           authHeaders={authHeaders}
           BASE={BASE}
         />
+
+        {/* プルリク機能の利用有無を選択 */}
+        <section style={{ marginTop: 16 }}>
+          <h2>プルリクエスト機能の利用</h2>
+          <p style={{ fontSize: 14, marginTop: 4 }}>
+            このアプリでプルリクエスト（PR）まで作成しますか？
+          </p>
+          <div style={{ display: 'flex', gap: 16, marginTop: 4 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <input
+                type="radio"
+                checked={usePr === true}
+                onChange={() => setUsePr(true)}
+              />
+              プルリクエストを使う
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <input
+                type="radio"
+                checked={usePr === false}
+                onChange={() => setUsePr(false)}
+              />
+              プルリクエストは使わない（アップロードのみ）
+            </label>
+          </div>
+
+          {/*  プルリクを使うときだけフォーク説明を表示 */}
+          {usePr && (
+            <section style={{ marginTop: 16 }}>
+              <h3>フォーク（Fork）について</h3>
+              <p style={{ fontSize: 13, lineHeight: 1.7 }}>
+                プルリクエスト機能を使う場合は、まず GitHub 上で対象リポジトリを
+                自分のアカウントにフォークしておく必要があります。
+                以下の手順に従ってフォークを作成してください。
+              </p>
+              <details style={{ marginTop: 12 }}>
+                <summary>
+                  フォークの手順を見る(選択したいリポジトリがない時)
+                </summary>
+                <div style={{ marginTop: 8, lineHeight: 1.7 }}>
+                  <h2 style={{ margin: '12px 0' }}>
+                    GitHubでリポジトリをフォークする手順
+                  </h2>
+
+                  <h3>1. PUSHしたいリポジトリを開く</h3>
+
+                  <h3>2. 画面右上の Fork を押す</h3>
+                  <figure style={{ textAlign: 'center', margin: '8px 0' }}>
+                    <img
+                      src="/images/8.png"
+                      alt="Forkボタン"
+                      style={{ maxWidth: '100%', height: 'auto' }}
+                    />
+                    <figcaption></figcaption>
+                  </figure>
+
+                  <h3>3. Owner が自分になっていることを確認する</h3>
+                  <figure style={{ textAlign: 'center', margin: '8px 0' }}>
+                    <img
+                      src="/images/9.png"
+                      alt="Ownerの選択画面"
+                      style={{ maxWidth: '100%', height: 'auto' }}
+                    />
+                  </figure>
+
+                  <h3>4. Create fork を押す（完了）</h3>
+                  <figure style={{ textAlign: 'center', margin: '8px 0' }}>
+                    <img
+                      src="/images/10.png"
+                      alt="Create forkボタン"
+                      style={{ maxWidth: '100%', height: 'auto' }}
+                    />
+                  </figure>
+
+                  <h2>これらのことをフォーク（Fork）という</h2>
+                  <figure
+                    style={{ textAlign: 'center', margin: '8px 0' }}
+                  ></figure>
+                </div>
+              </details>
+            </section>
+          )}
+        </section>
         <pre style={{ marginTop: 16, whiteSpace: 'pre-wrap' }}>{log}</pre>
       </main>
     );
@@ -151,6 +235,7 @@ export default function App() {
         authHeaders={authHeaders}
         BASE={BASE}
         setLog={setLog}
+        usePr={usePr}
       />
 
       {/* コミットメッセージ */}
@@ -170,6 +255,7 @@ export default function App() {
         BASE={BASE}
         commitMsg={commitMsg}
         prTitle={prTitle}
+        usePr={usePr}
       />
 
       {/* ログ */}
